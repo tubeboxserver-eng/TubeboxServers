@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../db';
-import { processVideoAsync, deleteVideoFilesAsync } from '../services/videoService';
+import { processVideoAsync, deleteVideoFilesAsync, processingProgress } from '../services/videoService';
 import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-tubebox-key';
@@ -221,6 +221,10 @@ export const getVideoById = async (
     if (!video) {
       res.status(404).json({ error: 'Video not found' });
       return;
+    }
+
+    if (video.status === 'PROCESSING') {
+      video.processing_progress = processingProgress.get(video.id) || 0;
     }
 
     res.json(video);

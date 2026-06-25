@@ -19,6 +19,8 @@ if (ffprobeStatic.path) {
   ffmpeg.setFfprobePath(ffprobeStatic.path);
 }
 
+export const processingProgress = new Map<string, number>();
+
 export const processVideoAsync = async (
   videoId: string,
   file: Express.Multer.File
@@ -60,6 +62,9 @@ export const processVideoAsync = async (
         })
         .on("progress", (progress) => {
           console.log(`[FFMPEG] Processing: ${progress.percent?.toFixed(2)}%`);
+          if (progress.percent) {
+            processingProgress.set(videoId, Math.min(99, Math.round(progress.percent)));
+          }
         })
         .on("end", () => {
           console.log(`[STEP 1] HLS conversion complete`);
@@ -204,6 +209,7 @@ export const processVideoAsync = async (
     fs.rmSync(outputDir, { recursive: true, force: true });
     fs.unlinkSync(file.path);
 
+    processingProgress.delete(videoId);
     console.log(`[SUCCESS] Video ${videoId} is READY`);
     console.log(`================ VIDEO PROCESS END =================\n`);
 
@@ -227,6 +233,7 @@ export const processVideoAsync = async (
       fs.unlinkSync(file.path);
     }
 
+    processingProgress.delete(videoId);
     console.log(`================ FAILURE END =================\n`);
   }
 };
